@@ -19,6 +19,14 @@ function messageFromPayload(payload, fallback) {
   if (typeof payload.detail === "string" && payload.detail.trim()) {
     return payload.detail;
   }
+  if (
+    payload.detail &&
+    typeof payload.detail === "object" &&
+    typeof payload.detail.message === "string" &&
+    payload.detail.message.trim()
+  ) {
+    return payload.detail.message;
+  }
   return fallback;
 }
 
@@ -109,4 +117,48 @@ export function runBivariate(series) {
 
 export function runClassification(series) {
   return postAnalysis("/api/classification", { series });
+}
+
+export async function uploadRawExcel(file) {
+  if (!file) {
+    throw new Error("Please choose an Excel file to upload.");
+  }
+
+  const form = new FormData();
+  form.append("file", file);
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE}/api/data/upload`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+      },
+      body: form,
+    });
+  } catch {
+    throw new Error(CONNECT_ERROR);
+  }
+
+  const payload = await readJson(response);
+
+  if (!response.ok) {
+    throw new Error(
+      messageFromPayload(
+        payload,
+        `The analysis server returned HTTP ${response.status}.`,
+      ),
+    );
+  }
+
+  if (
+    !payload ||
+    payload.status !== "success" ||
+    payload.validation == null ||
+    typeof payload.validation !== "object"
+  ) {
+    throw new Error("The analysis server returned an unexpected response structure.");
+  }
+
+  return payload;
 }

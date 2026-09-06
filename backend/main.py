@@ -15,7 +15,7 @@ from typing import Any, Literal, Optional
 import matplotlib
 matplotlib.use("Agg")
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -29,6 +29,16 @@ if str(ANALYSIS_DIR) not in sys.path:
 from univariate import run_univariate  # noqa: E402
 from bivariate import run_bivariate  # noqa: E402
 from classification import run_classification  # noqa: E402
+try:
+    from backend.upload_validation import (  # noqa: E402
+        UploadValidationError,
+        validate_raw_excel,
+    )
+except ImportError:
+    from upload_validation import (  # noqa: E402
+        UploadValidationError,
+        validate_raw_excel,
+    )
 
 
 ALLOWED_SERIES = ("AMS", "POT")
@@ -181,12 +191,22 @@ def run_analysis(analysis: str, series: str, given_discharge=None) -> dict:
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc: RequestValidationError):
     errors = exc.errors()
-    if any("given_discharge" in err.get("loc", ()) for err in errors):
+    locs = [err.get("loc", ()) for err in errors]
+    path = str(getattr(request.url, "path", "") or "")
+    if any("given_discharge" in loc for loc in locs):
         return JSONResponse(
             status_code=422,
             content={
                 "status": "error",
                 "message": "given_discharge must be a positive number in m³/s.",
+            },
+        )
+    if path.endswith("/api/data/upload") or any("file" in loc for loc in locs):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "status": "error",
+                "message": "An Excel file is required. Please choose a .xlsx workbook.",
             },
         )
     return JSONResponse(
@@ -248,4 +268,21 @@ def api_bivariate(body: AnalysisRequest):
 def api_classification(body: AnalysisRequest):
     # given_discharge is ignored for classification
     return run_analysis("classification", body.series)
+
+
+@app.post("/api/data/upload")
+async def api_data_upload(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        validation = validate_raw_excel(contents, file.filename or "")
+    except UploadValidationError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail={"status": "error", "message": exc.message},
+        ) from None
+    return {
+        "status": "success",
+        "filename": file.filename,
+        "validation": to_jsonable(validation),
+    }
 
