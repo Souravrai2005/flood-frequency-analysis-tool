@@ -1,0 +1,124 @@
+cd('C:\Users\soura\SFE_IFC-Toolbox-main\SFE_IFC-Toolbox-main')
+
+
+
+
+>> addpath(genpath('C:\Users\soura\SFE_IFC-Toolbox-main\SFE_IFC-Toolbox-main'))
+
+>> which Auto_select_thre
+which selectpeaks
+which findpeaks
+
+C:\Users\soura\SFE_IFC-Toolbox-main\SFE_IFC-Toolbox-main\Software and Code(SFE_IFC_20211027)\Software and Code(SFE_IFC_20211027)\Auto_select_thre.m
+C:\Users\soura\SFE_IFC-Toolbox-main\SFE_IFC-Toolbox-main\Software and Code(SFE_IFC_20211027)\Software and Code(SFE_IFC_20211027)\selectpeaks.m
+C:\Program Files\MATLAB\R2025a\toolbox\signal\signal\findpeaks.m
+>> filename = 'Ukai(1975-2021).xlsx';
+>> data = readmatrix(filename, 'Sheet', '62225');
+>> flowdata = data;
+
+%% 8. Catchment area in km^2
+area_km = 62225;
+
+%% 9. Calculate the minimum independence interval
+% This is exactly the formula used in SFE_IFC
+interval = floor(5 + log(area_km/1.609^2));
+>> [output_para, figuredata] = Auto_select_thre(flowdata, interval);
+>> 
+>> disp('--------------------------------------------')
+disp('Automatic POT Threshold Selection Results')
+disp('--------------------------------------------')
+
+fprintf('Selected Threshold = %.6f m^3/s\n', output_para(1));
+fprintf('AD Statistic       = %.6f\n', output_para(2));
+fprintf('Peaks Per Year     = %.6f\n', output_para(3));
+fprintf('AD p-value         = %.6f\n', output_para(4));
+
+%% 13. Store the selected threshold separately
+threshold = output_para(1);
+
+fprintf('\nFINAL SELECTED THRESHOLD = %.6f m^3/s\n', threshold);
+--------------------------------------------
+Automatic POT Threshold Selection Results
+--------------------------------------------
+Selected Threshold = 4622.900000 m^3/s
+AD Statistic       = 0.206467
+Peaks Per Year     = 1.238245
+AD p-value         = 0.988565
+
+FINAL SELECTED THRESHOLD = 4622.900000 m^3/s
+>> Q = flowdata(:,4);
+
+P90 = prctile(Q,90);
+
+fprintf('90th percentile discharge = %.4f m^3/s\n', P90);
+90th percentile discharge = 804.8600 m^3/s
+>> area_km = 62225;
+
+interval = floor(5 + log(area_km/1.609^2));
+
+peaks_datenum = selectpeaks(flowdata, 4622.9, interval);
+
+size(peaks_datenum)
+peaks_datenum
+
+ans =
+
+    52     6
+
+
+peaks_datenum =
+
+   1.0e+05 *
+
+    0.0950    0.0950    0.0547    7.2145    7.2145    7.2146
+    0.0895    0.0895    0.0895    7.2173    7.2173    7.2173
+    0.0805    0.0805    0.0795    7.2178    7.2178    7.2179
+    0.0618    0.0618    0.0470    7.2182    7.2182    7.2182
+    0.0689    0.0689    0.0689    7.2211    7.2211    7.2211
+    0.0623    0.0623    0.0623    7.2218    7.2218    7.2218
+    0.0753    0.1744    0.0731    7.2254    7.2254    7.2254
+    0.0500    0.2080    0.2080    7.2288    7.2289    7.2289
+    0.1070    0.1070    0.0865    7.2362    7.2362    7.2362
+    0.0621    0.0621    0.0621    7.2435    7.2435    7.2435
+    0.0524    0.0782    0.0782    7.2472    7.2472    7.2472
+    0.0644    0.0649    0.0649    7.2544    7.2545    7.2545
+    0.0598    0.0598    0.0598    7.2619    7.2619    7.2619
+    0.0532    0.0797    0.0797    7.2622    7.2623    7.2623
+    0.0666    0.0666    0.0666    7.2655    7.2655    7.2655
+    0.0876    0.0876    0.0876    7.2689    7.2689    7.2689
+    0.1181    0.1186    0.1186    7.2691    7.2692    7.2692
+    0.0666    0.0666    0.0666    7.2693    7.2693    7.2693
+    0.0853    0.0853    0.0853    7.2726    7.2726    7.2726
+    0.0490    0.0490    0.0490    7.2764    7.2764    7.2764
+    0.0508    0.0508    0.0508    7.2766    7.2766    7.2766
+    0.0768    0.0768    0.0768    7.2798    7.2798    7.2798
+    0.0531    0.1883    0.1883    7.2838    7.2839    7.2839
+    0.0819    0.0819    0.0819    7.2876    7.2876    7.2876
+    0.0555    0.0555    0.0555    7.2945    7.2945    7.2945
+    0.0858    0.0858    0.0858    7.2947    7.2947    7.2947
+    0.2009    0.2009    0.0737    7.2986    7.2986    7.2987
+    0.0753    0.0753    0.0753    7.3019    7.3019    7.3019
+    0.0506    0.0506    0.0506    7.3093    7.3093    7.3093
+    0.0687    0.0687    0.0687    7.3124    7.3124    7.3124
+    0.1036    0.1036    0.0942    7.3130    7.3130    7.3132
+    0.0568    0.0568    0.0568    7.3164    7.3164    7.3164
+    0.0617    0.0617    0.0617    7.3167    7.3167    7.3167
+    0.0568    0.0568    0.0568    7.3238    7.3238    7.3238
+    0.1280    0.1280    0.1280    7.3271    7.3271    7.3271
+    0.0485    0.2905    0.2905    7.3274    7.3275    7.3275
+    0.1356    0.1433    0.1433    7.3307    7.3308    7.3308
+    0.1153    0.1153    0.1153    7.3311    7.3311    7.3311
+    0.0467    0.0467    0.0467    7.3387    7.3387    7.3387
+    0.0627    0.0627    0.0627    7.3424    7.3424    7.3424
+    0.0571    0.0571    0.0571    7.3459    7.3459    7.3459
+    0.1332    0.1332    0.1332    7.3497    7.3497    7.3497
+    0.0524    0.1248    0.1248    7.3529    7.3530    7.3530
+    0.0775    0.0775    0.0775    7.3532    7.3532    7.3532
+    0.1441    0.1441    0.1441    7.3535    7.3535    7.3535
+    0.1287    0.1287    0.1287    7.3565    7.3565    7.3565
+    0.0481    0.0481    0.0481    7.3568    7.3568    7.3568
+    0.1012    0.1012    0.1012    7.3570    7.3570    7.3570
+    0.1279    0.1279    0.1279    7.3603    7.3603    7.3603
+    0.0565    0.0565    0.0565    7.3637    7.3637    7.3637
+    0.0521    0.1442    0.1442    7.3749    7.3750    7.3750
+    0.0479    0.0479    0.0479    7.3751    7.3751    7.3751

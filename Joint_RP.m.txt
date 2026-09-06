@@ -1,0 +1,75 @@
+clc
+clear all
+[~,sheet_name]=xlsfinfo('G:\Flood frequency analysis_WP3\AMS_Mahi_Sab_27sept.xlsx');
+
+for k=1:numel(sheet_name)
+    k
+    clearvars -except k sheet_name
+   series = xlsread('G:\Flood frequency analysis_WP3\AMS_Mahi_Sab_27sept.xlsx',sheet_name{k});
+   % Peak=xlsread('G:\Flood frequency analysis_WP3\AMS_Mahi_Sab_Peak_Qvalues.xlsx','GEV_Return_Periods');  
+   Volume=xlsread('G:\Flood frequency analysis_WP3\AMS_Mahi_Sab_Volume_Qvalues.xlsx','GEV_Return_Periods');  
+   Duration=xlsread('G:\Flood frequency analysis_WP3\AMS_Mahi_Sab_Duration_Qvalues.xlsx','GEV_Return_Periods');  
+
+   P1 = series(:,5);
+   V1 = series(:,6);
+
+%define observed series
+% A = (Peak(k,:))';
+B = (Volume(k,:))';
+C = (Duration(k,:))';
+
+% par_A = wblfit(P1);
+par_A = lognfit(P1);
+
+% par_B = lognfit(V1);
+par_B = wblfit(V1);
+
+A1 = par_A(1,1);
+A2 = par_A(1,2);
+% A3 = par_A(1,3);
+
+B1 = par_B(1,1);
+B2 = par_B(1,2);
+
+for i =1:6
+    for j =1:6
+
+%calculate reduced variate on the basis of marginal distribution
+% Fx = cdf("Weibull",A(i,1),A1,A2);
+Fx = cdf("Lognormal",B(i,1),A1,A2);
+
+% Fy = cdf("Lognormal",B(j,1),B1,B2);
+Fy = cdf("Weibull",C(j,1),B1,B2);
+
+%calculate kendall's tau
+tau=corr(P1,V1,'type','kendall');
+
+%calculate theta
+theta = 2*tau/(1-tau);
+
+%calculate joint return period using OR/AND case
+z = 1;
+Copula = ((Fx).^(-theta)+(Fy).^(-theta)-1).^(-1/theta);
+
+TOR(i,j) = round(z/(1-Copula(1,1)),2);
+TAND(i,j) = round(z/(1-Fx(1,1)-Fy(1,1)+Copula(1,1)),2);
+
+end
+end
+
+Peak_F1 = [1 Volume(k,:)]';
+Tor_F1 = [Duration(k,:); TOR];
+Tor_F = [Peak_F1 Tor_F1];
+
+Tand_F1 = [Duration(k,:); TAND];
+Tand_F = [Peak_F1 Tand_F1];
+Results = [Tor_F Tand_F];
+
+filename1= 'G:\Flood frequency analysis_WP3\Joint return period\AMS_VD_Mahi_Sab_JRP_28sept_F.xlsx';
+title1={'TOR','T=2yrs','T=5yrs','T=10yrs','T=25yrs','T=50yrs','T=100yrs','TAND','T=2yrs','T=5yrs','T=10yrs','T=25yrs','T=50yrs','T=100yrs',};
+   
+xlswrite(filename1,title1,sheet_name{k}, 'A1');
+xlswrite(filename1,Results,sheet_name{k}, 'A2');
+
+end
+
